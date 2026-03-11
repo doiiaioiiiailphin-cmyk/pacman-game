@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>鍚冭眴浜?- Pac-Man</title>
+    <title>吃豆人 - Pac-Man</title>
     <style>
         * {
             margin: 0;
@@ -122,23 +122,23 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>馃幃 鍚冭眴浜?/h1>
+        <h1>🎮 吃豆人</h1>
         <div class="score-board">
-            <div class="score">鍒嗘暟: <span id="score">0</span></div>
-            <div class="level">鍏冲崱: <span id="level">1</span></div>
-            <div class="lives">鐢熷懡: <span id="lives">鉂わ笍鉂わ笍鉂わ笍</span></div>
+            <div class="score">分数: <span id="score">0</span></div>
+            <div class="level">关卡: <span id="level">1</span></div>
+            <div class="lives">生命: <span id="lives">❤️❤️❤️</span></div>
         </div>
         <canvas id="gameCanvas" width="560" height="620"></canvas>
         <div class="instructions">
-            <p>浣跨敤 <kbd>鈫?/kbd> <kbd>鈫?/kbd> <kbd>鈫?/kbd> <kbd>鈫?/kbd> 鎴?<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> 鎺у埗鏂瑰悜</p>
-            <p>鎸?<kbd>绌烘牸</kbd> 鏆傚仠娓告垙</p>
+            <p>使用 <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> 或 <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> 控制方向</p>
+            <p>按 <kbd>空格</kbd> 暂停游戏</p>
         </div>
     </div>
     
     <div class="game-over" id="gameOver">
-        <h2 id="gameOverTitle">娓告垙缁撴潫</h2>
-        <p>鏈€缁堝垎鏁? <span id="finalScore">0</span></p>
-        <button onclick="restartGame()">閲嶆柊寮€濮?/button>
+        <h2 id="gameOverTitle">游戏结束</h2>
+        <p>最终分数: <span id="finalScore">0</span></p>
+        <button onclick="restartGame()">重新开始</button>
     </div>
 
     <script>
@@ -149,7 +149,8 @@
         const COLS = 28;
         const ROWS = 31;
         
-        // 鍦板浘: 0=绌哄湴, 1=澧? 2=璞嗗瓙, 3=鑳介噺璞? 4=骞界伒闂?        const MAP_TEMPLATE = [
+        // 地图: 0=空地, 1=墙, 2=豆子, 3=能量豆, 4=幽灵门
+        const MAP_TEMPLATE = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
             [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
@@ -191,16 +192,17 @@
         let gamePaused = false;
         let dotsRemaining = 0;
         
-        // 鐜╁
+        // 玩家
         const pacman = {
             x: 14,
             y: 23,
-            direction: 0, // 0=鍙? 1=涓? 2=宸? 3=涓?            nextDirection: 0,
+            direction: 0, // 0=右, 1=下, 2=左, 3=上
+            nextDirection: 0,
             mouthOpen: 0,
             mouthDir: 1
         };
         
-        // 骞界伒
+        // 幽灵
         const ghosts = [
             { x: 13, y: 14, color: '#ff0000', direction: 0, scared: false, name: 'Blinky' },
             { x: 14, y: 14, color: '#ffb8ff', direction: 0, scared: false, name: 'Pinky' },
@@ -243,17 +245,20 @@
                     const py = y * CELL_SIZE;
                     
                     if (cell === 1) {
-                        // 澧?                        ctx.fillStyle = '#2121de';
+                        // 墙
+                        ctx.fillStyle = '#2121de';
                         ctx.fillRect(px, py, CELL_SIZE, CELL_SIZE);
                         ctx.strokeStyle = '#5555ff';
                         ctx.strokeRect(px + 1, py + 1, CELL_SIZE - 2, CELL_SIZE - 2);
                     } else if (cell === 2) {
-                        // 灏忚眴瀛?                        ctx.fillStyle = '#ffb8ae';
+                        // 小豆子
+                        ctx.fillStyle = '#ffb8ae';
                         ctx.beginPath();
                         ctx.arc(px + CELL_SIZE/2, py + CELL_SIZE/2, 2, 0, Math.PI * 2);
                         ctx.fill();
                     } else if (cell === 3) {
-                        // 鑳介噺璞?                        ctx.fillStyle = '#ffb8ae';
+                        // 能量豆
+                        ctx.fillStyle = '#ffb8ae';
                         ctx.beginPath();
                         ctx.arc(px + CELL_SIZE/2, py + CELL_SIZE/2, 6, 0, Math.PI * 2);
                         ctx.fill();
@@ -277,7 +282,7 @@
             ctx.lineTo(px, py);
             ctx.fill();
             
-            // 鍢村反鍔ㄧ敾
+            // 嘴巴动画
             pacman.mouthOpen += pacman.mouthDir * 0.15;
             if (pacman.mouthOpen > 1) pacman.mouthDir = -1;
             if (pacman.mouthOpen < 0) pacman.mouthDir = 1;
@@ -290,12 +295,12 @@
                 
                 ctx.fillStyle = ghost.scared ? '#0000ff' : ghost.color;
                 
-                // 韬綋
+                // 身体
                 ctx.beginPath();
                 ctx.arc(px, py - 2, CELL_SIZE/2 - 2, Math.PI, 0);
                 ctx.lineTo(px + CELL_SIZE/2 - 2, py + CELL_SIZE/2 - 2);
                 
-                // 娉㈡氮搴曢儴
+                // 波浪底部
                 for (let i = 0; i < 4; i++) {
                     const waveX = px + CELL_SIZE/2 - 2 - i * (CELL_SIZE - 4) / 4;
                     ctx.quadraticCurveTo(waveX - 2, py + CELL_SIZE/2 + 2, waveX - 4, py + CELL_SIZE/2 - 2);
@@ -303,7 +308,7 @@
                 
                 ctx.fill();
                 
-                // 鐪肩潧
+                // 眼睛
                 ctx.fillStyle = '#fff';
                 ctx.beginPath();
                 ctx.arc(px - 3, py - 3, 3, 0, Math.PI * 2);
@@ -319,7 +324,8 @@
         }
         
         function canMove(x, y) {
-            // 闅ч亾浼犻€?            if (x < 0) x = COLS - 1;
+            // 隧道传送
+            if (x < 0) x = COLS - 1;
             if (x >= COLS) x = 0;
             
             if (y < 0 || y >= ROWS) return false;
@@ -327,7 +333,7 @@
         }
         
         function movePacman() {
-            // 灏濊瘯鍒囨崲鏂瑰悜
+            // 尝试切换方向
             let nextX = pacman.x;
             let nextY = pacman.y;
             
@@ -342,7 +348,7 @@
                 pacman.direction = pacman.nextDirection;
             }
             
-            // 绉诲姩
+            // 移动
             nextX = pacman.x;
             nextY = pacman.y;
             
@@ -357,11 +363,13 @@
                 pacman.x = nextX;
                 pacman.y = nextY;
                 
-                // 闅ч亾浼犻€?                if (pacman.x < 0) pacman.x = COLS - 1;
+                // 隧道传送
+                if (pacman.x < 0) pacman.x = COLS - 1;
                 if (pacman.x >= COLS) pacman.x = 0;
             }
             
-            // 鍚冭眴瀛?            const cell = map[pacman.y][pacman.x];
+            // 吃豆子
+            const cell = map[pacman.y][pacman.x];
             if (cell === 2) {
                 map[pacman.y][pacman.x] = 0;
                 score += 10;
@@ -375,7 +383,7 @@
                 updateScore();
             }
             
-            // 妫€鏌ユ槸鍚﹂€氬叧
+            // 检查是否通关
             if (dotsRemaining === 0) {
                 levelUp();
             }
@@ -385,15 +393,17 @@
             ghosts.forEach(ghost => {
                 const directions = [];
                 
-                // 妫€鏌ュ彲绉诲姩鏂瑰悜
+                // 检查可移动方向
                 if (canMove(ghost.x + 1, ghost.y)) directions.push(0);
                 if (canMove(ghost.x, ghost.y + 1)) directions.push(1);
                 if (canMove(ghost.x - 1, ghost.y)) directions.push(2);
                 if (canMove(ghost.x, ghost.y - 1)) directions.push(3);
                 
                 if (directions.length > 0) {
-                    // 绠€鍗旳I锛氶殢鏈烘垨杩介€愮帺瀹?                    if (Math.random() < 0.7 && !ghost.scared) {
-                        // 杩介€愭ā寮?                        let bestDir = directions[0];
+                    // 简单AI：随机或追逐玩家
+                    if (Math.random() < 0.7 && !ghost.scared) {
+                        // 追逐模式
+                        let bestDir = directions[0];
                         let minDist = Infinity;
                         
                         directions.forEach(dir => {
@@ -412,7 +422,7 @@
                         
                         ghost.direction = bestDir;
                     } else if (ghost.scared) {
-                        // 閫冭窇妯″紡
+                        // 逃跑模式
                         let bestDir = directions[0];
                         let maxDist = 0;
                         
@@ -432,11 +442,11 @@
                         
                         ghost.direction = bestDir;
                     } else {
-                        // 闅忔満
+                        // 随机
                         ghost.direction = directions[Math.floor(Math.random() * directions.length)];
                     }
                     
-                    // 绉诲姩
+                    // 移动
                     switch(ghost.direction) {
                         case 0: ghost.x++; break;
                         case 1: ghost.y++; break;
@@ -444,7 +454,8 @@
                         case 3: ghost.y--; break;
                     }
                     
-                    // 闅ч亾浼犻€?                    if (ghost.x < 0) ghost.x = COLS - 1;
+                    // 隧道传送
+                    if (ghost.x < 0) ghost.x = COLS - 1;
                     if (ghost.x >= COLS) ghost.x = 0;
                 }
             });
@@ -466,14 +477,15 @@
             ghosts.forEach((ghost, index) => {
                 if (Math.abs(ghost.x - pacman.x) < 1 && Math.abs(ghost.y - pacman.y) < 1) {
                     if (ghost.scared) {
-                        // 鍚冩帀骞界伒
+                        // 吃掉幽灵
                         score += 200;
                         ghost.x = 13 + index % 2;
                         ghost.y = 14;
                         ghost.scared = false;
                         updateScore();
                     } else {
-                        // 琚菇鐏垫姄浣?                        lives--;
+                        // 被幽灵抓住
+                        lives--;
                         updateLives();
                         
                         if (lives <= 0) {
@@ -491,7 +503,7 @@
         }
         
         function updateLives() {
-            document.getElementById('lives').textContent = '鉂わ笍'.repeat(lives);
+            document.getElementById('lives').textContent = '❤️'.repeat(lives);
         }
         
         function updateLevel() {
@@ -515,10 +527,10 @@
             const title = document.getElementById('gameOverTitle');
             
             if (win) {
-                title.textContent = '馃帀 鎭枩閫氬叧锛?;
+                title.textContent = '🎉 恭喜通关！';
                 overlay.classList.add('win-screen');
             } else {
-                title.textContent = '馃拃 娓告垙缁撴潫';
+                title.textContent = '💀 游戏结束';
                 overlay.classList.remove('win-screen');
             }
             
@@ -556,7 +568,7 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = '48px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText('鏆傚仠', canvas.width/2, canvas.height/2);
+                ctx.fillText('暂停', canvas.width/2, canvas.height/2);
             }
         }
         
@@ -571,7 +583,7 @@
             setTimeout(gameLoop, 150);
         }
         
-        // 閿洏鎺у埗
+        // 键盘控制
         document.addEventListener('keydown', (e) => {
             switch(e.key) {
                 case 'ArrowRight':
@@ -601,7 +613,8 @@
             e.preventDefault();
         });
         
-        // 鍒濆鍖栨父鎴?        initMap();
+        // 初始化游戏
+        initMap();
         gameLoop();
     </script>
 </body>
